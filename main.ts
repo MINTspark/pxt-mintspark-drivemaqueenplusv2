@@ -2,50 +2,36 @@ namespace EasyMaqueenPlusV2 {
     let steeringCorrection = 0;
     let distanceCorrection = 0;
     let wheelDiameter = 43;
-
-    //% block="set steering correction %correction (positive number turns more to the right)"
-    //% weight=98
-    export function setSteeringCorrection(correction: number): void {
-        steeringCorrection = correction;
-    }
-
-    //% block="set distance correction %correction"
-    //% weight=98
-    export function setDistanceCorrection(correction: number): void {
-        distanceCorrection = correction;
-    }
-
-    //% block="set wheel diameter %diameter"
-    //% weight=98
-    export function setWheelDiameterCorrection(diameter: number): void {
-        wheelDiameter = diameter;
-    }
+    let minSpeed = 30;
 
     //% group="Basic control"
     //% block="drive %edir speed %speed"
-    //% speed.min=0 speed.max=255
-    //% weight=99
+    //% speed.min=30 speed.max=255
+    //% weight=29
     export function drive(direction: maqueenPlusV2.MyEnumDir, speed: number): void {
+        if (speed < minSpeed) { speed = minSpeed; }
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed * getSteeringCorrectionPercent(speed));
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, direction, speed);
     }
 
     //% group="Basic control"
-    //% block="drive %edir speed %speed for %seconds microseconds"
-    //% speed.min=0 speed.max=255
-    //% weight=99
-    export function driveTime(direction: maqueenPlusV2.MyEnumDir, speed: number, microseconds: number): void {
+    //% block="drive %edir speed %speed for %seconds seconds"
+    //% speed.min=30 speed.max=255
+    //% weight=28
+    export function driveTime(direction: maqueenPlusV2.MyEnumDir, speed: number, seconds: number): void {
+        if (speed < minSpeed) { speed = minSpeed; }
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed * getSteeringCorrectionPercent(speed));
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, direction, speed);
-        basic.pause(microseconds);
+        basic.pause(seconds * 1000);
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
     //% group="Basic control"
     //% block="drive %edir speed %speed for distance %distance"
-    //% speed.min=0 speed.max=255
-    //% weight=99
+    //% speed.min=30 speed.max=255
+    //% weight=27
     export function driveDistance(direction: maqueenPlusV2.MyEnumDir, speed: number, distance: number): void {
+        if (speed < minSpeed) { speed = minSpeed; }
         let microsecondsToRun = getTimeForDistanceAndSpeed(speed, distance * getDistanceCorrectionPercent());
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed * getSteeringCorrectionPercent(speed));
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, direction, speed);
@@ -55,17 +41,46 @@ namespace EasyMaqueenPlusV2 {
 
     //% group="Basic control"
     //% block="stop"
-    //% weight=98
+    //% weight=26
     export function controlMotorStop(): void {
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
-    //% group="Advanced control"
-    //% block="read steering correction"
+    //% group="Adjustments"
+    //% block="read steering correction \\%"
     //% weight=98
     export function readSteeringCorrection(): number {
         return steeringCorrection;
     }
+
+    //% group="Adjustments"
+    //% block="read distance correction \\%"
+    //% weight=98
+    export function readDistanceCorrection(): number {
+        return distanceCorrection;
+    }
+
+    //% group="Adjustments"
+    //% block="set steering correction %correction \\% (positive number turns more to the right)"
+    //% weight=98
+    export function setSteeringCorrection(correction: number): void {
+        steeringCorrection = correction;
+    }
+
+    //% group="Adjustments"
+    //% block="set distance correction %correction \\%"
+    //% weight=98
+    export function setDistanceCorrection(correction: number): void {
+        distanceCorrection = correction;
+    }
+
+    //% group="Adjustments"
+    //% block="set wheel diameter %diameter"
+    //% weight=98
+    export function setWheelDiameterCorrection(diameter: number): void {
+        wheelDiameter = diameter;
+    }
+
 
     function getTimeForDistanceAndSpeed(speed: number, distance:number) : number
     {

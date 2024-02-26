@@ -21,41 +21,46 @@ namespace EasyMaqueenPlusV2 {
         wheelDiameter = diameter;
     }
 
+    //% group="Basic control"
     //% block="drive %edir speed %speed"
     //% speed.min=0 speed.max=255
     //% weight=99
     export function drive(direction: maqueenPlusV2.MyEnumDir, speed: number): void {
-        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed * getSteeringCorrectionPercent());
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed * getSteeringCorrectionPercent(speed));
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, direction, speed);
     }
 
+    //% group="Basic control"
     //% block="drive %edir speed %speed for %seconds microseconds"
     //% speed.min=0 speed.max=255
     //% weight=99
     export function driveTime(direction: maqueenPlusV2.MyEnumDir, speed: number, microseconds: number): void {
-        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed + steeringCorrection);
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed * getSteeringCorrectionPercent(speed));
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, direction, speed);
         basic.pause(microseconds);
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
+    //% group="Basic control"
     //% block="drive %edir speed %speed for distance %distance"
     //% speed.min=0 speed.max=255
     //% weight=99
     export function driveDistance(direction: maqueenPlusV2.MyEnumDir, speed: number, distance: number): void {
-        let microsecondsToRun = getTimeForDistanceAndSpeed(speed, distance);
-        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed + steeringCorrection);
+        let microsecondsToRun = getTimeForDistanceAndSpeed(speed, distance * getDistanceCorrectionPercent());
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, direction, speed * getSteeringCorrectionPercent(speed));
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, direction, speed);
         basic.pause(microsecondsToRun);
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
+    //% group="Basic control"
     //% block="stop"
     //% weight=98
     export function controlMotorStop(): void {
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
+    //% group="Advanced control"
     //% block="read steering correction"
     //% weight=98
     export function readSteeringCorrection(): number {
@@ -66,14 +71,15 @@ namespace EasyMaqueenPlusV2 {
     {
         let degreesOneSecond = 6E-05 * speed * speed * speed - 0.0332 * speed * speed + 6.28*speed - 12.616;
         let distanceOneDegree = wheelDiameter * Math.PI / 360;
-        return (distance / (degreesOneSecond * distanceOneDegree)) * 1000 * getDistanceCorrectionPercent();
+        return (distance / (degreesOneSecond * distanceOneDegree)) * 1000;
     }
 
     function getDistanceCorrectionPercent() : number {
         return (100 + distanceCorrection) / 100;
     }
 
-    function getSteeringCorrectionPercent(): number {
-        return (100 + steeringCorrection) / 100;
+    function getSteeringCorrectionPercent(speed: number): number {
+        let adjustedCorrection = 2E-07 * speed * speed * speed - 9E-05 * speed * speed + 0.0174 * speed - 0.035
+        return (100 + (steeringCorrection * adjustedCorrection)) / 100;
     }
 }

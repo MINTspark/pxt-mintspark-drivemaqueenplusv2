@@ -1,7 +1,3 @@
-/**
- * Custom graphic block
- */
-//% weight=100 color=#0fbc11 icon="\uf067" block="Easy maqueenPlusV2"
 namespace EasyMaqueenPlusV2 {
     let steeringCorrection = 0;
 
@@ -23,5 +19,11 @@ namespace EasyMaqueenPlusV2 {
     //% weight=98
     export function controlMotorStop(): void {
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
+    }
+
+    //% block="read steering correction"
+    //% weight=98
+    export function readSteeringCorrection(): number {
+        return steeringCorrection;
     }
 }

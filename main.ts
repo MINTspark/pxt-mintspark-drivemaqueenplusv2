@@ -103,9 +103,9 @@ namespace EasyMaqueenPlusV2 {
             turnCorrection = (100 + turnCorrectionLeft) / 100;
         }
 
-        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, leftMotorDirection, turnSpeed * turnCorrection);
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, leftMotorDirection, turnSpeed);
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, rightMotorDirection, turnSpeed);
-        basic.pause(getTimeMsForDegreesAndSpeed(turnSpeed, degrees * wheelDegreesPerTurnDegree));
+        basic.pause(getTimeMsForDegreesAndSpeed(turnSpeed, degrees * wheelDegreesPerTurnDegree * turnCorrection));
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 

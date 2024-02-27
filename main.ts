@@ -215,7 +215,7 @@ namespace EasyMaqueenPlusV2 {
 
     function getTimeMsForDistanceAndSpeed(speed: number, distance:number) : number
     {
-        let distanceMmOneSecond = 5E-05 * speed * speed * speed - 0.021 * speed * speed + 3.4318 * speed + 3.6312;
+        let distanceMmOneSecond = 5E-05 * speed * speed * speed - 0.0229 * speed * speed + 3.5795 * speed + 3.8194;
         //let degreesOneSecond = 6E-05 * speed * speed * speed - 0.0332 * speed * speed + 6.28*speed - 12.616;
         //let distanceOneDegree = wheelDiameter * Math.PI / 360;
         //return (distance / (degreesOneSecond * distanceOneDegree)) * 1000;

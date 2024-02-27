@@ -87,20 +87,19 @@ namespace EasyMaqueenPlusV2 {
     }
 
     //% group="Turn Controls"
-    //% block="%turnDirection for %degrees degrees"
+    //% block="turn %turnDirection for %degrees degrees"
     //% weight=29
     export function turn(turnDirection: TurnDirection, degrees: number): void {
         let leftMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
         let rightMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
-        let wheelDirection = WheelDirection.Forward;
         let turnCorrection = (100 + turnCorrectionRight) / 100;
 
         if (turnDirection == TurnDirection.Left)
         {
             leftMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
             rightMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
-            wheelDirection = WheelDirection.Back;
             turnCorrection = (100 + turnCorrectionLeft) / 100;
+            basic.showNumber(turnCorrection);
         }
 
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, leftMotorDirection, turnSpeed);
@@ -184,8 +183,8 @@ namespace EasyMaqueenPlusV2 {
     }
 
     function getTimeMsForDegreesAndSpeed(speed: number, degrees: number): number {
-        let degreesOneSecond2 = 6E-05 * speed * speed * speed - 0.0332 * speed * speed + 6.28 * speed - 12.616;
-        return (1 / degreesOneSecond2) * degrees * 1000;
+        let degreesOneSecond = 6E-05 * speed * speed * speed - 0.0332 * speed * speed + 6.28 * speed - 12.616;
+        return (1 / degreesOneSecond) * degrees * 1000;
     }
 
     function getDistanceCorrectionPercent(direction: WheelDirection) : number {

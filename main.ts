@@ -125,7 +125,8 @@ namespace EasyMaqueenPlusV2 {
             turnCorrectionOffset = turnCorrectionLeftOffset;
         }
 
-        let pauseTime = (degrees / (0.1 / turnCorrection)) + 10 + turnCorrectionOffset;
+        let speedAdjustment = 2E-07 * turnSpeed * turnSpeed * turnSpeed - 9E-05 * turnSpeed * turnSpeed + 0.0174 * turnSpeed - 0.035;
+        let pauseTime = ((degrees / (0.1 / turnCorrection)) + 10 + turnCorrectionOffset) / speedAdjustment;
         
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, leftMotorDirection, turnSpeed);
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, rightMotorDirection, turnSpeed);
@@ -214,9 +215,11 @@ namespace EasyMaqueenPlusV2 {
 
     function getTimeMsForDistanceAndSpeed(speed: number, distance:number) : number
     {
-        let degreesOneSecond = 6E-05 * speed * speed * speed - 0.0332 * speed * speed + 6.28*speed - 12.616;
-        let distanceOneDegree = wheelDiameter * Math.PI / 360;
-        return (distance / (degreesOneSecond * distanceOneDegree)) * 1000;
+        let distanceMmOneSecond = 5E-05 * speed * speed * speed - 0.021 * speed * speed + 3.4318 * speed + 3.6312;
+        //let degreesOneSecond = 6E-05 * speed * speed * speed - 0.0332 * speed * speed + 6.28*speed - 12.616;
+        //let distanceOneDegree = wheelDiameter * Math.PI / 360;
+        //return (distance / (degreesOneSecond * distanceOneDegree)) * 1000;
+        return (distance / distanceMmOneSecond) * 1000;
     }
 
     function getTimeMsForDegreesAndSpeed(speed: number, degrees: number): number {

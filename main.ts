@@ -126,7 +126,7 @@ namespace EasyMaqueenPlusV2 {
         }
 
         let speedAdjustment = 2E-07 * turnSpeed * turnSpeed * turnSpeed - 9E-05 * turnSpeed * turnSpeed + 0.0174 * turnSpeed - 0.035;
-        let pauseTime = ((degrees / (0.1 / turnCorrection)) + 10 + turnCorrectionOffset) / speedAdjustment;
+        let pauseTime = ((degrees / (0.2 / turnCorrection)) + 10 + turnCorrectionOffset) / speedAdjustment;
         
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, leftMotorDirection, turnSpeed);
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, rightMotorDirection, turnSpeed);
@@ -211,7 +211,6 @@ namespace EasyMaqueenPlusV2 {
     export function setWheelDiameterCorrection(diameter: number): void {
         wheelDiameter = diameter;
     }
-
 
     function getTimeMsForDistanceAndSpeed(speed: number, distance:number) : number
     {

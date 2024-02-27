@@ -6,9 +6,11 @@ namespace EasyMaqueenPlusV2 {
     let wheelDiameter = 43;
     let minSpeed = 30;
     let wheelDegreesPerTurnDegree = 2.5;
-    let turnSpeed = 70;
+    let turnSpeed = 50;
     let turnCorrectionLeft = 0;
+    let turnCorrectionLeftOffset = 0;
     let turnCorrectionRight = 0;
+    let turnCorrectionRightOffset = 0;
 
     //Turn direction enumeration selection
     export enum TurnDirection {
@@ -87,24 +89,47 @@ namespace EasyMaqueenPlusV2 {
     }
 
     //% group="Turn Controls"
+    //% block="turn %turnDirection for %time ms"
+    //% weight=29
+    export function turnForTime(turnDirection: TurnDirection, time: number): void {
+        let leftMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
+        let rightMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
+        let turnCorrection = (100 + turnCorrectionRight) / 100;
+
+        if (turnDirection == TurnDirection.Left) {
+            leftMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
+            rightMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
+            turnCorrection = (100 + turnCorrectionLeft) / 100;
+        }
+
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, leftMotorDirection, turnSpeed);
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, rightMotorDirection, turnSpeed);
+        basic.pause(time);
+        maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
+    }
+
+    //% group="Turn Controls"
     //% block="turn %turnDirection for %degrees degrees"
     //% weight=29
     export function turn(turnDirection: TurnDirection, degrees: number): void {
         let leftMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
         let rightMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
         let turnCorrection = (100 + turnCorrectionRight) / 100;
+        let turnCorrectionOffset = turnCorrectionRightOffset;
 
         if (turnDirection == TurnDirection.Left)
         {
             leftMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
             rightMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
             turnCorrection = (100 + turnCorrectionLeft) / 100;
-            basic.showNumber(turnCorrection);
+            turnCorrectionOffset = turnCorrectionLeftOffset;
         }
 
+        let pauseTime = (degrees / (0.1 / turnCorrection)) + 10 + turnCorrectionOffset;
+        
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, leftMotorDirection, turnSpeed);
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, rightMotorDirection, turnSpeed);
-        basic.pause(getTimeMsForDegreesAndSpeed(turnSpeed, degrees * wheelDegreesPerTurnDegree * turnCorrection));
+        basic.pause(pauseTime);
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
@@ -164,6 +189,18 @@ namespace EasyMaqueenPlusV2 {
         }
         else {
             turnCorrectionLeft = correction;
+        }
+    }
+
+    //% group="Adjustments"
+    //% block="set turn correction offset %direction %correction ms"
+    //% weight=12
+    export function setTurnCorrectionOffset(direction: TurnDirection, correction: number): void {
+        if (direction == TurnDirection.Right) {
+            turnCorrectionRightOffset = correction;
+        }
+        else {
+            turnCorrectionLeftOffset = correction;
         }
     }
 

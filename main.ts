@@ -11,6 +11,7 @@ namespace EasyMaqueenPlusV2 {
     let turnCorrectionLeftOffset = 0;
     let turnCorrectionRight = 0;
     let turnCorrectionRightOffset = 0;
+    let MPU6050Initialised = false;
 
     //Turn direction enumeration selection
     export enum TurnDirection {
@@ -88,8 +89,20 @@ namespace EasyMaqueenPlusV2 {
         if (direction == WheelDirection.Back) { motorDirection = maqueenPlusV2.MyEnumDir.Backward; }
 
         // Setup IMU
-        MINTsparkMpu6050.InitMPU6050(0);
-        MINTsparkMpu6050.Calibrate(4);
+        if (!MPU6050Initialised)
+        {
+            if (MINTsparkMpu6050.InitMPU6050(0))
+            {
+                MPU6050Initialised = true;
+            }
+            else
+            {
+                return;
+            }
+        }
+        
+        
+        MINTsparkMpu6050.Calibrate(1);
         
         // PID Control
         let startTime = input.runningTime();
@@ -134,7 +147,7 @@ namespace EasyMaqueenPlusV2 {
             if (speedL > 255) { speedL = 255 };
             if (speedR > 255) { speedR = 255 };
 
-            datalogger.log(
+            /*datalogger.log(
                 datalogger.createCV("heading", heading),
                 datalogger.createCV("error", error),
                 datalogger.createCV("errorSum", errorSum),
@@ -144,6 +157,7 @@ namespace EasyMaqueenPlusV2 {
                 datalogger.createCV("sr", speedR),
                 datalogger.createCV("sr", speedR)
             )
+            */
 
             // Change motor speed
             maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speedL);

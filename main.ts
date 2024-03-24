@@ -99,20 +99,24 @@ namespace EasyMaqueenPlusV2 {
         let targetHeading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
         let lastError = 0;
         let errorSum = 0;
+        let speedL = speed;
+        let speedR = speed;
 
-        while ((startTime + input.runningTime()) > input.runningTime())
+        while ((startTime + microsecondsToRun) > input.runningTime())
         {
             let heading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
             let error = targetHeading - heading;
             if (error > 180) { error -= 360 };
             if (error < -180) { error += 360 };
-            let correction = Ki * error + Ki * errorSum + Kd * (error - lastError);
+            let correction = Kp * error + Ki * errorSum + Kd * (error - lastError);
             lastError = error;
             errorSum += error;
+            speedL += correction;
+            speedR -= correction;
 
             // Change motor speed
-            maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speed + correction);
-            maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirection, speed - correction);
+            maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speedL);
+            maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirection, speedR);
         }
         
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);

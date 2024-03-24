@@ -5,7 +5,8 @@
         "core": "*",
         "radio": "*",
         "microphone": "*",
-        "maqueenPlusV2": "github:DFRobot/pxt-DFRobot_MaqueenPlus_v20#v2.2.0"
+        "maqueenPlusV2": "github:DFRobot/pxt-DFRobot_MaqueenPlus_v20#v2.2.0",
+        "pxt-mintspark-mpu6050": "github:mpoelzl/pxt-mintspark-mpu6050#v1.0.0"
     },
     "files": [
         "main.blocks",

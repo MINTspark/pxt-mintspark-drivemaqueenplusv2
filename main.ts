@@ -72,6 +72,61 @@ namespace EasyMaqueenPlusV2 {
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
+
+
+
+
+
+    //% group="Drive control"
+    //% block="drive PID %direction speed %speed for distance %distance"
+    //% speed.min=30 speed.max=255
+    //% weight=27
+    export function driveDistancePID(direction: WheelDirection, speed: number, distance: number): void {
+        if (speed < minSpeed) { speed = minSpeed; }
+        let motorDirection = maqueenPlusV2.MyEnumDir.Forward;
+        let microsecondsToRun = getTimeMsForDistanceAndSpeed(speed, distance * getDistanceCorrectionPercent(direction));
+        if (direction == WheelDirection.Back) { motorDirection = maqueenPlusV2.MyEnumDir.Backward; }
+
+        // Setup IMU
+        MINTsparkMpu6050.InitMPU6050(0);
+        MINTsparkMpu6050.Calibrate(4);
+        
+        // PID Control
+        let startTime = input.runningTime();
+        let Kp = 0.3;
+        let Ki = 0;
+        let Kd = 0;
+        let targetHeading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
+        let lastError = 0;
+        let errorSum = 0;
+
+        while ((startTime + input.runningTime()) > input.runningTime())
+        {
+            let heading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
+            let error = targetHeading - heading;
+            if (error > 180) { error -= 360 };
+            if (error < -180) { error += 360 };
+            let correction = Ki * error + Ki * errorSum + Kd * (error - lastError);
+            lastError = error;
+            errorSum += error;
+
+            // Change motor speed
+            maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speed + correction);
+            maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirection, speed - correction);
+        }
+        
+        maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
+    }
+
+
+
+
+
+
+
+
+
+
     //% group="Drive control"
     //% block="stop"
     //% weight=26

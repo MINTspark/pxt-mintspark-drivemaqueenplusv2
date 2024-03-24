@@ -93,9 +93,9 @@ namespace EasyMaqueenPlusV2 {
         
         // PID Control
         let startTime = input.runningTime();
-        let Kp = 0.3;
-        let Ki = 0;
-        let Kd = 0;
+        let Kp = 10;
+        let Ki = 0.1;
+        let Kd = 0.5;
         let targetHeading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
         let lastError = 0;
         let errorSum = 0;
@@ -108,11 +108,42 @@ namespace EasyMaqueenPlusV2 {
             let error = targetHeading - heading;
             if (error > 180) { error -= 360 };
             if (error < -180) { error += 360 };
-            let correction = Kp * error + Ki * errorSum + Kd * (error - lastError);
+
+            let errorChange = error - lastError;
+            let deleteError = error;
+            let correction = Kp * error + Ki * errorSum + Kd * errorChange;
+            
             lastError = error;
-            errorSum += error;
-            speedL += correction;
-            speedR -= correction;
+
+            if (error <= 10 && error >= -10)
+            {
+                errorSum += error;
+            }
+            else if (error > 10)
+            {
+                errorSum += 10;
+            }
+            else{
+                errorSum -= 10;
+            }
+            
+            speedL = speed + correction;
+            speedR = speed - correction;
+            if (speedL < 0) {speedL = 0 };
+            if (speedR < 0) { speedR = 0 };
+            if (speedL > 255) { speedL = 255 };
+            if (speedR > 255) { speedR = 255 };
+
+            datalogger.log(
+                datalogger.createCV("heading", heading),
+                datalogger.createCV("error", error),
+                datalogger.createCV("errorSum", errorSum),
+                datalogger.createCV("errorChange", errorChange),
+                datalogger.createCV("correct", correction),
+                datalogger.createCV("sl", speedL),
+                datalogger.createCV("sr", speedR),
+                datalogger.createCV("sr", speedR)
+            )
 
             // Change motor speed
             maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speedL);

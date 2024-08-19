@@ -238,6 +238,75 @@ namespace EasyMaqueenPlusV2 {
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
+    //% group="Turn Controls"
+    //% block="gyro turn %turnDirection for %degrees degrees speed %speed"
+    //% weight=29
+    export function turnGyro(turn: TurnDirection, degrees: number, speed: number): void {
+        let motorDirectionL = maqueenPlusV2.MyEnumDir.Forward;
+        let motorDirectionR = maqueenPlusV2.MyEnumDir.Backward;
+        let speedL = speed;
+        let speedR = -speed;
+
+        if (turn == TurnDirection.Left) {
+            speedL = -speed;
+            speedR = speed;
+            motorDirectionL = maqueenPlusV2.MyEnumDir.Backward;
+            motorDirectionR = maqueenPlusV2.MyEnumDir.Forward;
+        }
+
+        // Setup IMU
+        if (!MPU6050Initialised) {
+            if (MINTsparkMpu6050.InitMPU6050(0)) {
+                MPU6050Initialised = true;
+            }
+            else {
+                return;
+            }
+        }
+
+        MINTsparkMpu6050.Calibrate(1);
+
+        let startTime = input.runningTime();
+        let startHeading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
+        let change = 0;
+
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirectionL, speedL);
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirectionR, speedR);
+        basic.pause(200);
+
+        while (input.runningTime() - startTime < 30000) {
+            let heading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
+            let reciprocal = heading + 180;
+            if (reciprocal >= 360) reciprocal -= 360;
+
+            if (turn == TurnDirection.Right) {
+                if (heading < startHeading && heading < reciprocal) {
+                    heading += 360;
+                }
+
+                change = heading - startHeading;
+            }
+            else {
+                if (heading > startHeading && heading > reciprocal) {
+                    heading -= 360;
+                }
+
+                change = startHeading - heading;
+            }
+
+            if (change > degrees) break;
+
+            /*datalogger.log(
+                datalogger.createCV("heading", heading),
+                datalogger.createCV("change", change)
+            )
+            */
+
+        }
+
+        maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
+    }
+
     //% group="Adjustments"
     //% block="read steering correction %direction \\%"
     //% weight=20

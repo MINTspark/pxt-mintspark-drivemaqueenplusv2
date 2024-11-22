@@ -6,11 +6,10 @@
         "radio": "*",
         "microphone": "*",
         "maqueenPlusV2": "github:DFRobot/pxt-DFRobot_MaqueenPlus_v20#v2.2.0",
-        "pxt-mintspark-mpu6050": "github:mpoelzl/pxt-mintspark-mpu6050#v1.0.1",
+        "pxt-mintspark-mpu6050": "github:mpoelzl/pxt-mintspark-mpu6050#v1.1.2",
         "datalogger": "*"
     },
     "files": [
-        "main.blocks",
         "main.ts",
         "README.md"
     ],
@@ -18,7 +17,7 @@
         "test.ts"
     ],
     "targetVersions": {
-        "target": "6.0.28",
+        "target": "7.0.51",
         "targetId": "microbit"
     },
     "supportedTargets": [

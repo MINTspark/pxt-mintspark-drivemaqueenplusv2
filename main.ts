@@ -1,3 +1,4 @@
+//% weight=100 color=#a831e8 block="Drive MaqueenPlusV2" blockId="Easy Maqueen Plus V2" icon="\uf0e7"
 namespace EasyMaqueenPlusV2 {
     let steeringCorrectionForward = 0;
     let steeringCorrectionBackward = 0;

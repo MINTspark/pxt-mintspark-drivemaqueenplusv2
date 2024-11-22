@@ -74,108 +74,75 @@ namespace EasyMaqueenPlusV2 {
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
+    function setupAndCalibrateMPU6050(): boolean {
+        // Setup IMU
+        if (!MPU6050Initialised) {
+            MPU6050Initialised = MINTsparkMpu6050.InitMPU6050(0);
+        }
 
+        // Calibrate
+        if (MPU6050Initialised) {
+            // Calibrate 6050 sensor for 1 second (robot must remain still during this period)
+            MINTsparkMpu6050.Calibrate(1);
+            return true;
+        }
 
-
-
+        return false;
+    }
 
     //% group="Drive control"
-    //% block="drive PID %direction speed %speed for distance %distance"
+    //% block="gyro drive %direction speed %speed for distance %distance"
     //% speed.min=30 speed.max=255
-    //% weight=27
+    //% weight=26
     export function driveDistancePID(direction: WheelDirection, speed: number, distance: number): void {
         if (speed < minSpeed) { speed = minSpeed; }
         let motorDirection = maqueenPlusV2.MyEnumDir.Forward;
         let microsecondsToRun = getTimeMsForDistanceAndSpeed(speed, distance * getDistanceCorrectionPercent(direction));
         if (direction == WheelDirection.Back) { motorDirection = maqueenPlusV2.MyEnumDir.Backward; }
 
-        // Setup IMU
-        if (!MPU6050Initialised)
-        {
-            if (MINTsparkMpu6050.InitMPU6050(0))
-            {
-                MPU6050Initialised = true;
-            }
-            else
-            {
-                return;
-            }
+        // Setup IMU, exit if not initialised
+        if (!setupAndCalibrateMPU6050()) {
+            return;
         }
-        
-        
-        MINTsparkMpu6050.Calibrate(1);
-        
+
         // PID Control
         let startTime = input.runningTime();
-        let Kp = 10;
-        let Ki = 0.1;
-        let Kd = 0.5;
-        let targetHeading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
-        let lastError = 0;
-        let errorSum = 0;
+        let lastUpdateTime = startTime
+        let Kp = 10; let Ki = 0.1; let Kd = 0.5;
+        let pidController = new MINTsparkMpu6050.PIDController();
+        pidController.setGains(Kp, Ki, Kd);
+        pidController.setPoint(MINTsparkMpu6050.UpdateMPU6050().orientation.yaw);
         let speedL = speed;
         let speedR = speed;
 
+        // Start moving at half speed
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speedL / 2);
+        maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirection, speedR / 2);
+
         while ((startTime + microsecondsToRun) > input.runningTime())
         {
-            let heading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
-            let error = targetHeading - heading;
-            if (error > 180) { error -= 360 };
-            if (error < -180) { error += 360 };
+            let updateTime = input.runningTime();
+            let pidCorrection = pidController.compute(updateTime - lastUpdateTime, MINTsparkMpu6050.UpdateMPU6050().orientation.yaw);
+            lastUpdateTime = updateTime;
 
-            let errorChange = error - lastError;
-            let deleteError = error;
-            let correction = Kp * error + Ki * errorSum + Kd * errorChange;
-            
-            lastError = error;
+            speedL = Math.constrain(speed + pidCorrection, 0, 255);
+            speedR = Math.constrain(speed - pidCorrection, 0, 255);
 
-            if (error <= 10 && error >= -10)
+            if (direction == WheelDirection.Back)
             {
-                errorSum += error;
-            }
-            else if (error > 10)
-            {
-                errorSum += 10;
-            }
-            else{
-                errorSum -= 10;
+                speedL = Math.constrain(speed - pidCorrection, 0, 255);
+                speedR = Math.constrain(speed + pidCorrection, 0, 255);
             }
             
-            speedL = speed + correction;
-            speedR = speed - correction;
-            if (speedL < 0) {speedL = 0 };
-            if (speedR < 0) { speedR = 0 };
-            if (speedL > 255) { speedL = 255 };
-            if (speedR > 255) { speedR = 255 };
-
-            /*datalogger.log(
-                datalogger.createCV("heading", heading),
-                datalogger.createCV("error", error),
-                datalogger.createCV("errorSum", errorSum),
-                datalogger.createCV("errorChange", errorChange),
-                datalogger.createCV("correct", correction),
-                datalogger.createCV("sl", speedL),
-                datalogger.createCV("sr", speedR),
-                datalogger.createCV("sr", speedR)
-            )
-            */
-
             // Change motor speed
             maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speedL);
             maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirection, speedR);
+
+            basic.pause(10);
         }
         
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
-
-
-
-
-
-
-
-
-
 
     //% group="Drive control"
     //% block="stop"
@@ -255,54 +222,38 @@ namespace EasyMaqueenPlusV2 {
             motorDirectionR = maqueenPlusV2.MyEnumDir.Forward;
         }
 
-        // Setup IMU
-        if (!MPU6050Initialised) {
-            if (MINTsparkMpu6050.InitMPU6050(0)) {
-                MPU6050Initialised = true;
-            }
-            else {
-                return;
-            }
+        // Setup IMU, exit if not initialised
+        if (!setupAndCalibrateMPU6050()) {
+            return;
         }
-
-        MINTsparkMpu6050.Calibrate(1);
 
         let startTime = input.runningTime();
         let startHeading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
-        let change = 0;
+        let previousHeading = startHeading;
+        let totalChange = 0;
 
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirectionL, speedL);
         maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirectionR, speedR);
         basic.pause(200);
 
-        while (input.runningTime() - startTime < 30000) {
+        while (input.runningTime() - startTime < 5000) {
             let heading = MINTsparkMpu6050.UpdateMPU6050().orientation.yaw;
-            let reciprocal = heading + 180;
-            if (reciprocal >= 360) reciprocal -= 360;
+            let change = previousHeading - heading;
 
             if (turn == TurnDirection.Right) {
-                if (heading < startHeading && heading < reciprocal) {
-                    heading += 360;
-                }
-
-                change = heading - startHeading;
-            }
-            else {
-                if (heading > startHeading && heading > reciprocal) {
-                    heading -= 360;
-                }
-
-                change = startHeading - heading;
+                change *= -1;
             }
 
-            if (change > degrees) break;
+            if (change < 0) {
+                change += 360;
+            }
 
-            /*datalogger.log(
-                datalogger.createCV("heading", heading),
-                datalogger.createCV("change", change)
-            )
-            */
+            totalChange += change;
 
+            if (totalChange > degrees) break;
+
+            previousHeading = heading;
+            basic.pause(10);
         }
 
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
@@ -382,9 +333,9 @@ namespace EasyMaqueenPlusV2 {
     //% group="Adjustments"
     //% block="set wheel diameter %diameter"
     //% weight=98
-    export function setWheelDiameterCorrection(diameter: number): void {
-        wheelDiameter = diameter;
-    }
+    //export function setWheelDiameterCorrection(diameter: number): void {
+    //    wheelDiameter = diameter;
+    //}
 
     function getTimeMsForDistanceAndSpeed(speed: number, distance:number) : number
     {

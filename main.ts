@@ -13,6 +13,7 @@ namespace EasyMaqueenPlusV2 {
     let turnCorrectionRight = 0;
     let turnCorrectionRightOffset = 0;
     let MPU6050Initialised = false;
+    let stopGyroDrive = true;
 
     //Turn direction enumeration selection
     export enum TurnDirection {
@@ -35,6 +36,7 @@ namespace EasyMaqueenPlusV2 {
     //% speed.min=30 speed.max=255
     //% weight=29
     export function drive(direction: WheelDirection, speed: number): void {
+        stopGyroDrive = true;
         if (speed < minSpeed) { speed = minSpeed; }
         let motorDirection = maqueenPlusV2.MyEnumDir.Forward;
         if (direction == WheelDirection.Back) { motorDirection = maqueenPlusV2.MyEnumDir.Backward; }
@@ -48,6 +50,7 @@ namespace EasyMaqueenPlusV2 {
     //% speed.min=30 speed.max=255
     //% weight=28
     export function driveTime(direction: WheelDirection, speed: number, seconds: number): void {
+        stopGyroDrive = true;
         if (speed < minSpeed) { speed = minSpeed; }
         let motorDirection = maqueenPlusV2.MyEnumDir.Forward;
         if (direction == WheelDirection.Back) { motorDirection = maqueenPlusV2.MyEnumDir.Backward; }
@@ -59,10 +62,11 @@ namespace EasyMaqueenPlusV2 {
     }
 
     //% group="Drive control"
-    //% block="drive %direction speed %speed for distance %distance"
+    //% block="drive %direction speed %speed for distance %distance mm"
     //% speed.min=30 speed.max=255
     //% weight=27
     export function driveDistance(direction: WheelDirection, speed: number, distance: number): void {
+        stopGyroDrive = true;
         if (speed < minSpeed) { speed = minSpeed; }
         let motorDirection = maqueenPlusV2.MyEnumDir.Forward;
         let microsecondsToRun = getTimeMsForDistanceAndSpeed(speed, distance * getDistanceCorrectionPercent(direction));
@@ -91,14 +95,28 @@ namespace EasyMaqueenPlusV2 {
     }
 
     //% group="Drive control"
-    //% block="gyro drive %direction speed %speed for distance %distance"
+    //% block="gyro drive %direction speed %speed"
     //% speed.min=30 speed.max=255
     //% weight=26
+    export function driveTankModeSingleSpeedGyro(direction: WheelDirection, speed: number): void {
+        // Drive with PID Control in thebackground to allow code to continue
+        control.inBackground(() => {
+            let startTime = input.runningTime();
+            let getCurrentValue = () => input.runningTime() - startTime;
+            driveDistancePID(direction, speed, 10000);
+        })
+    }
+
+    //% group="Drive control"
+    //% block="gyro drive %direction speed %speed for distance %distance mm"
+    //% speed.min=30 speed.max=255
+    //% weight=25
     export function driveDistancePID(direction: WheelDirection, speed: number, distance: number): void {
         if (speed < minSpeed) { speed = minSpeed; }
         let motorDirection = maqueenPlusV2.MyEnumDir.Forward;
         let microsecondsToRun = getTimeMsForDistanceAndSpeed(speed, distance * getDistanceCorrectionPercent(direction));
         if (direction == WheelDirection.Back) { motorDirection = maqueenPlusV2.MyEnumDir.Backward; }
+        stopGyroDrive = false;
 
         // Setup IMU, exit if not initialised
         if (!setupAndCalibrateMPU6050()) {
@@ -121,6 +139,7 @@ namespace EasyMaqueenPlusV2 {
 
         while ((startTime + microsecondsToRun) > input.runningTime())
         {
+            if (stopGyroDrive) break;
             let updateTime = input.runningTime();
             let pidCorrection = pidController.compute(updateTime - lastUpdateTime, MINTsparkMpu6050.UpdateMPU6050().orientation.yaw);
             lastUpdateTime = updateTime;
@@ -135,6 +154,7 @@ namespace EasyMaqueenPlusV2 {
             }
             
             // Change motor speed
+            if (stopGyroDrive) break;
             maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.LeftMotor, motorDirection, speedL);
             maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.RightMotor, motorDirection, speedR);
 
@@ -146,15 +166,16 @@ namespace EasyMaqueenPlusV2 {
 
     //% group="Drive control"
     //% block="stop"
-    //% weight=26
+    //% weight=24
     export function controlMotorStop(): void {
+        stopGyroDrive = true;
         maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor);
     }
 
     //% group="Turn Controls"
     //% block="set turn speed %newSpeed"
     //% newSpeed.min=30 newSpeed.max=255
-    //% weight=14
+    //% weight=30
     export function setTurnSpeed(newSpeed: number): void {
         if (newSpeed < minSpeed) { newSpeed = minSpeed; }
         turnSpeed = newSpeed;
@@ -164,6 +185,7 @@ namespace EasyMaqueenPlusV2 {
     //% block="turn %turnDirection for %time ms"
     //% weight=29
     export function turnForTime(turnDirection: TurnDirection, time: number): void {
+        stopGyroDrive = true;
         let leftMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
         let rightMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
         let turnCorrection = (100 + turnCorrectionRight) / 100;
@@ -182,8 +204,9 @@ namespace EasyMaqueenPlusV2 {
 
     //% group="Turn Controls"
     //% block="turn %turnDirection for %degrees degrees"
-    //% weight=29
+    //% weight=28
     export function turn(turnDirection: TurnDirection, degrees: number): void {
+        stopGyroDrive = true;
         let leftMotorDirection = maqueenPlusV2.MyEnumDir.Forward;
         let rightMotorDirection = maqueenPlusV2.MyEnumDir.Backward;
         let turnCorrection = (100 + turnCorrectionRight) / 100;
@@ -207,9 +230,11 @@ namespace EasyMaqueenPlusV2 {
     }
 
     //% group="Turn Controls"
-    //% block="gyro turn %turnDirection for %degrees degrees speed %speed"
-    //% weight=29
-    export function turnGyro(turn: TurnDirection, degrees: number, speed: number): void {
+    //% block="gyro turn %turnDirection for %degrees degrees"
+    //% weight=26
+    export function turnGyro(turn: TurnDirection, degrees: number): void {
+        stopGyroDrive = true;
+        let speed = turnSpeed;
         let motorDirectionL = maqueenPlusV2.MyEnumDir.Forward;
         let motorDirectionR = maqueenPlusV2.MyEnumDir.Backward;
         let speedL = speed;
@@ -261,7 +286,7 @@ namespace EasyMaqueenPlusV2 {
 
     //% group="Adjustments"
     //% block="read steering correction %direction \\%"
-    //% weight=20
+    //% weight=2
     export function readSteeringCorrection(direction: WheelDirection): number {
         if (direction == WheelDirection.Forward)
         {
@@ -273,7 +298,7 @@ namespace EasyMaqueenPlusV2 {
 
     //% group="Adjustments"
     //% block="read distance correction %direction \\%"
-    //% weight=18
+    //% weight=1
     export function readDistanceCorrection(direction: WheelDirection): number {
         if (direction == WheelDirection.Forward) {
             return distanceCorrectionForward;
@@ -320,7 +345,7 @@ namespace EasyMaqueenPlusV2 {
 
     //% group="Adjustments"
     //% block="set turn correction offset %direction %correction ms"
-    //% weight=12
+    //% weight=11
     export function setTurnCorrectionOffset(direction: TurnDirection, correction: number): void {
         if (direction == TurnDirection.Right) {
             turnCorrectionRightOffset = correction;
